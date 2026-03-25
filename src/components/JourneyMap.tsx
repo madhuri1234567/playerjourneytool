@@ -1,17 +1,27 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import minimapSrc from "@/assets/minimap.jpg";
-import MapOverlay from "./map/MapOverlay";
+import PlayerOverlay from "./map/PlayerOverlay";
+import PlayerLegend from "./PlayerLegend";
 import { useImageDimensions } from "@/hooks/useImageDimensions";
-import type { MapPoint } from "@/types/map";
+import { getPlayerColor } from "@/lib/visualization";
+import type { Player, PlayerWithColor } from "@/types/map";
 
 interface JourneyMapProps {
-  points: MapPoint[];
+  players: Player[];
 }
 
-/** Container component: handles layout and dimension tracking. */
-const JourneyMap = ({ points }: JourneyMapProps) => {
+/** Container component: layout, dimension tracking, color assignment. */
+const JourneyMap = ({ players }: JourneyMapProps) => {
   const { containerRef, dimensions, measure } = useImageDimensions();
-  const [activePoint, setActivePoint] = useState<string | null>(null);
+
+  const playersWithColors: PlayerWithColor[] = useMemo(
+    () =>
+      players.map((p, i) => ({
+        ...p,
+        color: getPlayerColor(i),
+      })),
+    [players]
+  );
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 overflow-hidden bg-background">
@@ -29,13 +39,12 @@ const JourneyMap = ({ points }: JourneyMapProps) => {
           draggable={false}
         />
         {dimensions.width > 0 && (
-          <MapOverlay
-            points={points}
+          <PlayerOverlay
+            players={playersWithColors}
             dimensions={dimensions}
-            activePoint={activePoint}
-            onPointHover={setActivePoint}
           />
         )}
+        <PlayerLegend players={playersWithColors} />
       </div>
     </div>
   );
