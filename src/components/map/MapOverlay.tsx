@@ -33,6 +33,7 @@ const MapOverlay = ({ points, dimensions, activePoint, onPointHover }: MapOverla
           order={point.order}
           label={point.label}
           isActive={activePoint === point.id}
+          svgDimensions={dimensions}
           onMouseEnter={() => onPointHover(point.id)}
           onMouseLeave={() => onPointHover(null)}
         />
