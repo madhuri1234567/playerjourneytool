@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, memo } from "react";
-import type { GameEvent, Dimensions, GameEventType } from "@/types/map";
+import type { GameEvent, Dimensions, GameEventType, MapConfig } from "@/types/map";
 import { worldToPixel } from "@/lib/visualization";
 
 interface EventOverlayProps {
@@ -7,6 +7,7 @@ interface EventOverlayProps {
   dimensions: Dimensions;
   currentTime: number;
   hiddenPlayerIds: Set<string>;
+  mapConfig: MapConfig;
 }
 
 const EVENT_LABELS: Record<GameEventType, string> = {
@@ -16,7 +17,7 @@ const EVENT_LABELS: Record<GameEventType, string> = {
   storm_death: "Storm Death",
 };
 
-const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds }: EventOverlayProps) => {
+const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds, mapConfig }: EventOverlayProps) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const visibleEvents = useMemo(
@@ -30,7 +31,7 @@ const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds }:
   return (
     <>
       {visibleEvents.map((evt, i) => {
-        const pos = worldToPixel(evt.x, evt.y, dimensions);
+        const pos = worldToPixel(evt.x, evt.z, mapConfig, dimensions);
         const isHovered = hoveredIndex === i;
         return (
           <g
@@ -39,12 +40,11 @@ const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds }:
             onMouseLeave={handleMouseLeave}
             style={{ cursor: "pointer" }}
           >
-            {/* Invisible hit area for easier hover */}
             <circle cx={pos.x} cy={pos.y} r={10} fill="transparent" />
             <EventShape type={evt.type} x={pos.x} y={pos.y} hovered={isHovered} />
             {isHovered && (
               <EventTooltip
-                label={`${EVENT_LABELS[evt.type]} • t=${evt.t}`}
+                label={`${EVENT_LABELS[evt.type]} • t=${evt.t}s`}
                 x={pos.x}
                 y={pos.y}
                 svgWidth={dimensions.width}
@@ -59,12 +59,9 @@ const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds }:
 
 EventOverlay.displayName = "EventOverlay";
 
-/** Draws an SVG shape based on event type. */
 function EventShape({ type, x, y, hovered }: { type: GameEventType; x: number; y: number; hovered: boolean }) {
   const size = hovered ? 7 : 5;
   const shadowOpacity = hovered ? 0.4 : 0.25;
-
-  // Drop shadow for all markers
   const shadow = <circle cx={x} cy={y + 1} r={size + 1} fill="hsl(0, 0%, 0%)" opacity={shadowOpacity} />;
 
   switch (type) {
@@ -115,7 +112,6 @@ function EventShape({ type, x, y, hovered }: { type: GameEventType; x: number; y
   }
 }
 
-/** Tooltip rendered inside SVG — cleaner styling. */
 function EventTooltip({ label, x, y, svgWidth }: { label: string; x: number; y: number; svgWidth: number }) {
   const textWidth = label.length * 6.2 + 20;
   const flipped = x + textWidth + 14 > svgWidth;
@@ -124,9 +120,7 @@ function EventTooltip({ label, x, y, svgWidth }: { label: string; x: number; y: 
 
   return (
     <g>
-      {/* Shadow */}
       <rect x={tx + 1} y={ty + 1} width={textWidth} height={24} rx={5} fill="hsl(0, 0%, 0%)" opacity={0.35} />
-      {/* Background */}
       <rect
         x={tx}
         y={ty}

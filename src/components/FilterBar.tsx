@@ -1,78 +1,47 @@
-import { Calendar, Map, Hash } from "lucide-react";
+import { Map, Hash } from "lucide-react";
+
+interface MatchOption {
+  value: string;
+  label: string;
+}
 
 interface FilterBarProps {
-  maps: string[];
-  matchIds: string[];
-  dates: string[];
-  selectedMap: string;
+  matchOptions: MatchOption[];
   selectedMatchId: string;
-  selectedDate: string;
-  onMapChange: (v: string) => void;
-  onMatchIdChange: (v: string) => void;
-  onDateChange: (v: string) => void;
+  onMatchChange: (matchId: string) => void;
+  mapId: string;
 }
 
 const FilterBar = ({
-  maps,
-  matchIds,
-  dates,
-  selectedMap,
+  matchOptions,
   selectedMatchId,
-  selectedDate,
-  onMapChange,
-  onMatchIdChange,
-  onDateChange,
+  onMatchChange,
+  mapId,
 }: FilterBarProps) => {
-  const hasFilters = maps.length > 1 || matchIds.length > 1 || dates.length > 1;
-
-  if (!hasFilters) return null;
-
   return (
     <div className="flex items-center gap-4 px-5 py-2 bg-card/60 backdrop-blur-sm border-b border-border/50 text-xs">
-      {maps.length > 1 && (
-        <FilterSelect label="Map" value={selectedMap} options={maps} onChange={onMapChange} icon={<Map className="w-3 h-3" />} />
-      )}
-      {matchIds.length > 1 && (
-        <FilterSelect label="Match" value={selectedMatchId} options={matchIds} onChange={onMatchIdChange} icon={<Hash className="w-3 h-3" />} />
-      )}
-      {dates.length > 1 && (
-        <FilterSelect label="Date" value={selectedDate} options={dates} onChange={onDateChange} icon={<Calendar className="w-3 h-3" />} />
-      )}
+      <label className="flex items-center gap-1.5 text-muted-foreground">
+        <Hash className="w-3 h-3" />
+        <span className="font-medium text-[11px]">Match</span>
+        <select
+          value={selectedMatchId}
+          onChange={(e) => onMatchChange(e.target.value)}
+          className="bg-secondary/80 text-secondary-foreground rounded-md px-2 py-1 text-[11px] border border-border/40 outline-none cursor-pointer hover:bg-secondary transition-colors max-w-[320px]"
+        >
+          {matchOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Map className="w-3 h-3" />
+        <span className="text-[11px] font-medium text-foreground/70">{mapId}</span>
+      </div>
     </div>
   );
 };
-
-function FilterSelect({
-  label,
-  value,
-  options,
-  onChange,
-  icon,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (v: string) => void;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <label className="flex items-center gap-1.5 text-muted-foreground">
-      {icon}
-      <span className="font-medium text-[11px]">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-secondary/80 text-secondary-foreground rounded-md px-2 py-1 text-[11px] border border-border/40 outline-none cursor-pointer hover:bg-secondary transition-colors"
-      >
-        <option value="">All</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
 
 export default FilterBar;

@@ -1,5 +1,5 @@
 import { useMemo, memo } from "react";
-import type { Dimensions, HeatmapType, PathPoint, GameEvent } from "@/types/map";
+import type { Dimensions, HeatmapType, PathPoint, GameEvent, MapConfig } from "@/types/map";
 import { buildHeatmap, heatColor, HEAT_GRID_SIZE } from "@/lib/visualization";
 
 interface HeatmapOverlayProps {
@@ -7,13 +7,13 @@ interface HeatmapOverlayProps {
   paths: PathPoint[][];
   events: GameEvent[];
   dimensions: Dimensions;
+  mapConfig: MapConfig;
 }
 
-/** SVG heatmap rendered as semi-transparent grid cells with balanced opacity. */
-const HeatmapOverlay = memo(({ type, paths, events, dimensions }: HeatmapOverlayProps) => {
+const HeatmapOverlay = memo(({ type, paths, events, dimensions, mapConfig }: HeatmapOverlayProps) => {
   const cells = useMemo(
-    () => buildHeatmap(type, paths, events),
-    [type, paths, events]
+    () => buildHeatmap(type, paths, events, mapConfig),
+    [type, paths, events, mapConfig]
   );
 
   const cellW = dimensions.width / HEAT_GRID_SIZE;
