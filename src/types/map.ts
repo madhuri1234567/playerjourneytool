@@ -69,6 +69,7 @@ export interface MapConfig {
 export interface MatchIndexEntry {
   match_id: string;
   map: string;
+  date: string;
   player_count: number;
   bot_count: number;
   duration: number;

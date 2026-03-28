@@ -10,9 +10,11 @@ import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const [matchIndex, setMatchIndex] = useState<MatchIndexEntry[]>([]);
+  const [selectedMap, setSelectedMap] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
   const [matchData, setMatchData] = useState<PlayerData>(sampleData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load match index on mount
   useEffect(() => {
@@ -20,13 +22,14 @@ const Index = () => {
       .then((r) => r.json())
       .then((index: MatchIndexEntry[]) => {
         setMatchIndex(index);
-        // Auto-select first match
         if (index.length > 0) {
           loadMatch(index[0]);
+        } else {
+          setIsLoading(false);
         }
       })
       .catch(() => {
-        // Fallback to sample data silently
+        setIsLoading(false);
       });
   }, []);
 
@@ -37,7 +40,6 @@ const Index = () => {
       const data: PlayerData = await res.json();
       setMatchData(data);
       setSelectedMatchId(entry.match_id);
-      toast.success(`Loaded match: ${entry.player_count} player(s), ${formatDuration(entry.duration)}`);
     } catch {
       toast.error("Failed to load match data.");
     } finally {
@@ -45,16 +47,37 @@ const Index = () => {
     }
   }, []);
 
+  // When filters change, auto-select first matching match
+  const filteredIndex = useMemo(() => {
+    let filtered = matchIndex;
+    if (selectedMap) filtered = filtered.filter((m) => m.map === selectedMap);
+    if (selectedDate) filtered = filtered.filter((m) => m.date === selectedDate);
+    return filtered;
+  }, [matchIndex, selectedMap, selectedDate]);
+
+  const handleMapChange = useCallback((map: string) => {
+    setSelectedMap(map);
+    setSelectedDate("");
+  }, []);
+
+  const handleDateChange = useCallback((date: string) => {
+    setSelectedDate(date);
+  }, []);
+
+  // Auto-load first match when filtered list changes
+  useEffect(() => {
+    if (filteredIndex.length > 0) {
+      const current = filteredIndex.find((m) => m.match_id === selectedMatchId);
+      if (!current) {
+        loadMatch(filteredIndex[0]);
+      }
+    }
+  }, [filteredIndex, selectedMatchId, loadMatch]);
+
   const handleMatchChange = useCallback(
     (matchId: string) => {
       const entry = matchIndex.find((m) => m.match_id === matchId);
-      if (entry) {
-        loadMatch(entry);
-      } else if (!matchId) {
-        // "All" selected — load sample/first
-        setSelectedMatchId("");
-        setMatchData(sampleData);
-      }
+      if (entry) loadMatch(entry);
     },
     [matchIndex, loadMatch]
   );
@@ -74,26 +97,19 @@ const Index = () => {
   const events = matchData.events ?? [];
   const isEmpty = players.length === 0;
 
-  // Build match options for dropdown
-  const matchOptions = useMemo(
-    () =>
-      matchIndex.map((m) => ({
-        value: m.match_id,
-        label: `${m.match_id.split("-")[0]} · ${m.map} · ${m.player_count}p · ${formatDuration(m.duration)}`,
-      })),
-    [matchIndex]
-  );
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopBar onDataLoaded={handleDataLoaded} onError={handleError} />
 
-      {matchOptions.length > 0 && (
+      {matchIndex.length > 0 && (
         <FilterBar
-          matchOptions={matchOptions}
+          matchIndex={matchIndex}
+          selectedMap={selectedMap}
+          selectedDate={selectedDate}
           selectedMatchId={selectedMatchId}
+          onMapChange={handleMapChange}
+          onDateChange={handleDateChange}
           onMatchChange={handleMatchChange}
-          mapId={mapId}
         />
       )}
 
@@ -112,11 +128,5 @@ const Index = () => {
     </div>
   );
 };
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}m${s > 0 ? ` ${s}s` : ""}`;
-}
 
 export default Index;
