@@ -15,8 +15,22 @@ export interface Player {
   path: PathPoint[];
 }
 
+export type GameEventType = "kill" | "death" | "loot" | "storm_death";
+
+export interface GameEvent {
+  type: GameEventType;
+  x: number;
+  y: number;
+  t: number;
+  player_id: string;
+}
+
 export interface PlayerData {
+  map?: string;
+  match_id?: string;
+  date?: string;
   players: Player[];
+  events?: GameEvent[];
 }
 
 export interface PixelCoord {
@@ -33,3 +47,13 @@ export interface Dimensions {
 export interface PlayerWithColor extends Player {
   color: string;
 }
+
+/** Layer visibility state */
+export interface LayerVisibility {
+  paths: boolean;
+  events: boolean;
+  heatmap: boolean;
+}
+
+/** Heatmap type */
+export type HeatmapType = "movement" | "kills" | "deaths";

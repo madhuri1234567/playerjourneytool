@@ -1,6 +1,9 @@
 import type { PlayerData } from "@/types/map";
 
 const sampleData: PlayerData = {
+  map: "Erangel",
+  match_id: "match_001",
+  date: "2025-06-15",
   players: [
     {
       id: "player_1",
@@ -53,6 +56,16 @@ const sampleData: PlayerData = {
         { x: 0.68, y: 0.60, t: 5 },
       ],
     },
+  ],
+  events: [
+    { type: "kill", x: 0.50, y: 0.50, t: 5, player_id: "player_1" },
+    { type: "death", x: 0.48, y: 0.48, t: 5, player_id: "player_2" },
+    { type: "loot", x: 0.22, y: 0.58, t: 2, player_id: "player_1" },
+    { type: "loot", x: 0.70, y: 0.65, t: 2, player_id: "player_2" },
+    { type: "storm_death", x: 0.25, y: 0.75, t: 6, player_id: "bot_scout" },
+    { type: "kill", x: 0.72, y: 0.52, t: 4, player_id: "bot_patrol" },
+    { type: "death", x: 0.68, y: 0.60, t: 5, player_id: "bot_patrol" },
+    { type: "loot", x: 0.15, y: 0.70, t: 1, player_id: "player_1" },
   ],
 };
 

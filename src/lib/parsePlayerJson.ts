@@ -1,19 +1,22 @@
-import type { PlayerData } from "@/types/map";
+import type { PlayerData, GameEventType } from "@/types/map";
+
+const VALID_EVENT_TYPES: GameEventType[] = ["kill", "death", "loot", "storm_death"];
 
 /**
  * Parse and validate a JSON string as PlayerData.
+ * Supports optional events, map, match_id, date fields.
  * Throws descriptive errors on invalid input.
  */
 export function parsePlayerJson(jsonString: string): PlayerData {
   const raw = JSON.parse(jsonString);
 
   if (!raw || !Array.isArray(raw.players)) {
-    throw new Error("JSON must contain a \"players\" array.");
+    throw new Error('JSON must contain a "players" array.');
   }
 
   for (const player of raw.players) {
     if (typeof player.id !== "string") {
-      throw new Error("Each player must have a string \"id\".");
+      throw new Error('Each player must have a string "id".');
     }
     if (typeof player.is_bot !== "boolean") {
       throw new Error(`Player "${player.id}": "is_bot" must be a boolean.`);
@@ -26,6 +29,35 @@ export function parsePlayerJson(jsonString: string): PlayerData {
         throw new Error(`Player "${player.id}": each path point must have numeric x, y, t.`);
       }
     }
+  }
+
+  // Validate optional events array
+  if (raw.events !== undefined) {
+    if (!Array.isArray(raw.events)) {
+      throw new Error('"events" must be an array if provided.');
+    }
+    for (const evt of raw.events) {
+      if (!VALID_EVENT_TYPES.includes(evt.type)) {
+        throw new Error(`Event type "${evt.type}" is invalid. Must be one of: ${VALID_EVENT_TYPES.join(", ")}`);
+      }
+      if (typeof evt.x !== "number" || typeof evt.y !== "number" || typeof evt.t !== "number") {
+        throw new Error("Each event must have numeric x, y, t.");
+      }
+      if (typeof evt.player_id !== "string") {
+        throw new Error('Each event must have a string "player_id".');
+      }
+    }
+  }
+
+  // Validate optional metadata
+  if (raw.map !== undefined && typeof raw.map !== "string") {
+    throw new Error('"map" must be a string if provided.');
+  }
+  if (raw.match_id !== undefined && typeof raw.match_id !== "string") {
+    throw new Error('"match_id" must be a string if provided.');
+  }
+  if (raw.date !== undefined && typeof raw.date !== "string") {
+    throw new Error('"date" must be a string if provided.');
   }
 
   return raw as PlayerData;
