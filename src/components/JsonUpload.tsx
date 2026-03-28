@@ -81,7 +81,7 @@ const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
   return (
     <label className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
       <Upload className="w-3.5 h-3.5" />
-      Load JSON
+      Load Data
       <input
         type="file"
         accept="*/*"
