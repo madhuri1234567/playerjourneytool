@@ -1,71 +1,32 @@
 import type { PlayerData } from "@/types/map";
 
+/**
+ * Fallback sample data using AmbroseValley raw world coordinates.
+ * Used when no match data is loaded.
+ */
 const sampleData: PlayerData = {
-  map: "Erangel",
-  match_id: "match_001",
-  date: "2025-06-15",
+  map: "AmbroseValley",
+  match_id: "sample_001",
   players: [
     {
-      id: "player_1",
+      id: "sample_player",
       is_bot: false,
       path: [
-        { x: 0.10, y: 0.80, t: 0 },
-        { x: 0.15, y: 0.70, t: 1 },
-        { x: 0.22, y: 0.58, t: 2 },
-        { x: 0.30, y: 0.50, t: 3 },
-        { x: 0.40, y: 0.45, t: 4 },
-        { x: 0.50, y: 0.50, t: 5 },
-        { x: 0.58, y: 0.42, t: 6 },
-        { x: 0.65, y: 0.30, t: 7 },
-      ],
-    },
-    {
-      id: "player_2",
-      is_bot: false,
-      path: [
-        { x: 0.85, y: 0.85, t: 0 },
-        { x: 0.78, y: 0.75, t: 1 },
-        { x: 0.70, y: 0.65, t: 2 },
-        { x: 0.62, y: 0.58, t: 3 },
-        { x: 0.55, y: 0.55, t: 4 },
-        { x: 0.48, y: 0.48, t: 5 },
-      ],
-    },
-    {
-      id: "bot_scout",
-      is_bot: true,
-      path: [
-        { x: 0.50, y: 0.10, t: 0 },
-        { x: 0.45, y: 0.20, t: 1 },
-        { x: 0.40, y: 0.30, t: 2 },
-        { x: 0.38, y: 0.40, t: 3 },
-        { x: 0.35, y: 0.55, t: 4 },
-        { x: 0.30, y: 0.65, t: 5 },
-        { x: 0.25, y: 0.75, t: 6 },
-      ],
-    },
-    {
-      id: "bot_patrol",
-      is_bot: true,
-      path: [
-        { x: 0.70, y: 0.15, t: 0 },
-        { x: 0.75, y: 0.25, t: 1 },
-        { x: 0.80, y: 0.35, t: 2 },
-        { x: 0.78, y: 0.45, t: 3 },
-        { x: 0.72, y: 0.52, t: 4 },
-        { x: 0.68, y: 0.60, t: 5 },
+        { x: -170, z: 330, t: 0 },
+        { x: -150, z: 300, t: 50 },
+        { x: -120, z: 260, t: 100 },
+        { x: -80, z: 200, t: 150 },
+        { x: -30, z: 140, t: 200 },
+        { x: 40, z: 80, t: 250 },
+        { x: 100, z: 20, t: 300 },
+        { x: 160, z: -40, t: 350 },
       ],
     },
   ],
   events: [
-    { type: "kill", x: 0.50, y: 0.50, t: 5, player_id: "player_1" },
-    { type: "death", x: 0.48, y: 0.48, t: 5, player_id: "player_2" },
-    { type: "loot", x: 0.22, y: 0.58, t: 2, player_id: "player_1" },
-    { type: "loot", x: 0.70, y: 0.65, t: 2, player_id: "player_2" },
-    { type: "storm_death", x: 0.25, y: 0.75, t: 6, player_id: "bot_scout" },
-    { type: "kill", x: 0.72, y: 0.52, t: 4, player_id: "bot_patrol" },
-    { type: "death", x: 0.68, y: 0.60, t: 5, player_id: "bot_patrol" },
-    { type: "loot", x: 0.15, y: 0.70, t: 1, player_id: "player_1" },
+    { type: "loot", x: -150, z: 300, t: 50, player_id: "sample_player" },
+    { type: "kill", x: -30, z: 140, t: 200, player_id: "sample_player" },
+    { type: "loot", x: 40, z: 80, t: 250, player_id: "sample_player" },
   ],
 };
 

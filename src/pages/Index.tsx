@@ -1,92 +1,122 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import TopBar from "@/components/TopBar";
 import FilterBar from "@/components/FilterBar";
 import JourneyMap from "@/components/JourneyMap";
 import EmptyState from "@/components/EmptyState";
 import sampleData from "@/data/samplePlayers";
-import type { PlayerData } from "@/types/map";
+import type { PlayerData, MatchIndexEntry } from "@/types/map";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [allData, setAllData] = useState<PlayerData[]>([sampleData]);
+  const [matchIndex, setMatchIndex] = useState<MatchIndexEntry[]>([]);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("");
+  const [matchData, setMatchData] = useState<PlayerData>(sampleData);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [selectedMap, setSelectedMap] = useState("");
-  const [selectedMatchId, setSelectedMatchId] = useState("");
-  const [selectedDate, setSelectedDate] = useState("");
+  // Load match index on mount
+  useEffect(() => {
+    fetch("/data/matchIndex.json")
+      .then((r) => r.json())
+      .then((index: MatchIndexEntry[]) => {
+        setMatchIndex(index);
+        // Auto-select first match
+        if (index.length > 0) {
+          loadMatch(index[0]);
+        }
+      })
+      .catch(() => {
+        // Fallback to sample data silently
+      });
+  }, []);
+
+  const loadMatch = useCallback(async (entry: MatchIndexEntry) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/data/${entry.file}`);
+      const data: PlayerData = await res.json();
+      setMatchData(data);
+      setSelectedMatchId(entry.match_id);
+      toast.success(`Loaded match: ${entry.player_count} player(s), ${formatDuration(entry.duration)}`);
+    } catch {
+      toast.error("Failed to load match data.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleMatchChange = useCallback(
+    (matchId: string) => {
+      const entry = matchIndex.find((m) => m.match_id === matchId);
+      if (entry) {
+        loadMatch(entry);
+      } else if (!matchId) {
+        // "All" selected — load sample/first
+        setSelectedMatchId("");
+        setMatchData(sampleData);
+      }
+    },
+    [matchIndex, loadMatch]
+  );
 
   const handleDataLoaded = useCallback((newData: PlayerData) => {
-    setIsLoading(true);
-    // Small delay to let the UI show loading state for large files
-    requestAnimationFrame(() => {
-      setAllData((prev) => [...prev, newData]);
-      setIsLoading(false);
-      toast.success(`Loaded ${newData.players.length} player(s)`);
-    });
+    setMatchData(newData);
+    setSelectedMatchId(newData.match_id ?? "custom");
+    toast.success(`Loaded ${newData.players.length} player(s) from file`);
   }, []);
 
   const handleError = useCallback((message: string) => {
     toast.error(message);
   }, []);
 
-  const maps = useMemo(() => [...new Set(allData.map((d) => d.map).filter(Boolean))] as string[], [allData]);
-  const matchIds = useMemo(() => [...new Set(allData.map((d) => d.match_id).filter(Boolean))] as string[], [allData]);
-  const dates = useMemo(() => [...new Set(allData.map((d) => d.date).filter(Boolean))] as string[], [allData]);
+  const mapId = matchData.map ?? "AmbroseValley";
+  const players = matchData.players;
+  const events = matchData.events ?? [];
+  const isEmpty = players.length === 0;
 
-  const filteredData = useMemo(() => {
-    const filtered = allData.filter((d) => {
-      if (selectedMap && d.map !== selectedMap) return false;
-      if (selectedMatchId && d.match_id !== selectedMatchId) return false;
-      if (selectedDate && d.date !== selectedDate) return false;
-      return true;
-    });
-
-    return {
-      players: filtered.flatMap((d) => d.players),
-      events: filtered.flatMap((d) => d.events ?? []),
-    };
-  }, [allData, selectedMap, selectedMatchId, selectedDate]);
-
-  const hasActiveFilters = selectedMap || selectedMatchId || selectedDate;
-  const isEmpty = filteredData.players.length === 0;
+  // Build match options for dropdown
+  const matchOptions = useMemo(
+    () =>
+      matchIndex.map((m) => ({
+        value: m.match_id,
+        label: `${m.match_id.split("-")[0]} · ${m.map} · ${m.player_count}p · ${formatDuration(m.duration)}`,
+      })),
+    [matchIndex]
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <TopBar onDataLoaded={handleDataLoaded} onError={handleError} />
-      <FilterBar
-        maps={maps}
-        matchIds={matchIds}
-        dates={dates}
-        selectedMap={selectedMap}
-        selectedMatchId={selectedMatchId}
-        selectedDate={selectedDate}
-        onMapChange={setSelectedMap}
-        onMatchIdChange={setSelectedMatchId}
-        onDateChange={setSelectedDate}
-      />
+
+      {matchOptions.length > 0 && (
+        <FilterBar
+          matchOptions={matchOptions}
+          selectedMatchId={selectedMatchId}
+          onMatchChange={handleMatchChange}
+          mapId={mapId}
+        />
+      )}
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Processing player data…</p>
+            <p className="text-sm font-medium">Loading match data…</p>
           </div>
         </div>
       ) : isEmpty ? (
-        <EmptyState
-          hasFilters={!!hasActiveFilters}
-          onClearFilters={() => {
-            setSelectedMap("");
-            setSelectedMatchId("");
-            setSelectedDate("");
-          }}
-        />
+        <EmptyState hasFilters={false} onClearFilters={() => {}} />
       ) : (
-        <JourneyMap players={filteredData.players} events={filteredData.events} />
+        <JourneyMap players={players} events={events} mapId={mapId} />
       )}
     </div>
   );
 };
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m${s > 0 ? ` ${s}s` : ""}`;
+}
 
 export default Index;

@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from "react";
-import minimapSrc from "@/assets/minimap.jpg";
 import PlayerOverlay from "./map/PlayerOverlay";
 import PlayerLegend from "./PlayerLegend";
 import LayerControls from "./LayerControls";
@@ -7,15 +6,20 @@ import TimelineControls from "./TimelineControls";
 import { useImageDimensions } from "@/hooks/useImageDimensions";
 import { useTimeline } from "@/hooks/useTimeline";
 import { getPlayerColor, getTimeRange } from "@/lib/visualization";
+import { getMapConfig, getMapImage } from "@/lib/mapConfigs";
 import type { Player, PlayerWithColor, GameEvent, LayerVisibility, HeatmapType } from "@/types/map";
 
 interface JourneyMapProps {
   players: Player[];
   events: GameEvent[];
+  mapId: string;
 }
 
-const JourneyMap = ({ players, events }: JourneyMapProps) => {
+const JourneyMap = ({ players, events, mapId }: JourneyMapProps) => {
   const { containerRef, dimensions, measure } = useImageDimensions();
+
+  const mapConfig = useMemo(() => getMapConfig(mapId), [mapId]);
+  const mapImage = useMemo(() => getMapImage(mapId), [mapId]);
 
   const playersWithColors: PlayerWithColor[] = useMemo(
     () => players.map((p, i) => ({ ...p, color: getPlayerColor(i) })),
@@ -39,6 +43,11 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
     });
   }, []);
 
+  // Reset visibility when players change (match switch)
+  useMemo(() => {
+    setHiddenPlayerIds(new Set());
+  }, [players]);
+
   const [layers, setLayers] = useState<LayerVisibility>({
     paths: true,
     events: true,
@@ -58,8 +67,8 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
           className="relative inline-block rounded-lg overflow-hidden shadow-2xl border border-border/60"
         >
           <img
-            src={minimapSrc}
-            alt="Game minimap"
+            src={mapImage}
+            alt={`${mapId} minimap`}
             width={1024}
             height={1024}
             onLoad={measure}
@@ -75,6 +84,7 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
               events={events}
               layers={layers}
               heatmapType={heatmapType}
+              mapConfig={mapConfig}
             />
           )}
           <PlayerLegend

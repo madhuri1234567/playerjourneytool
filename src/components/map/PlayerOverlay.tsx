@@ -1,4 +1,4 @@
-import type { Dimensions, PlayerWithColor, GameEvent, HeatmapType, LayerVisibility } from "@/types/map";
+import type { Dimensions, PlayerWithColor, GameEvent, HeatmapType, LayerVisibility, MapConfig } from "@/types/map";
 import PlayerPath from "./PlayerPath";
 import EventOverlay from "./EventOverlay";
 import HeatmapOverlay from "./HeatmapOverlay";
@@ -12,9 +12,9 @@ interface PlayerOverlayProps {
   events: GameEvent[];
   layers: LayerVisibility;
   heatmapType: HeatmapType;
+  mapConfig: MapConfig;
 }
 
-/** SVG layer rendering all visualization layers on the map. */
 const PlayerOverlay = ({
   players,
   dimensions,
@@ -23,6 +23,7 @@ const PlayerOverlay = ({
   events,
   layers,
   heatmapType,
+  mapConfig,
 }: PlayerOverlayProps) => {
   const { width, height } = dimensions;
 
@@ -43,17 +44,16 @@ const PlayerOverlay = ({
       height={height}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Heatmap (lowest layer) */}
       {layers.heatmap && (
         <HeatmapOverlay
           type={heatmapType}
           paths={paths}
           events={events}
           dimensions={dimensions}
+          mapConfig={mapConfig}
         />
       )}
 
-      {/* Player paths */}
       {layers.paths &&
         visiblePlayers.map((player) => (
           <PlayerPath
@@ -61,10 +61,10 @@ const PlayerOverlay = ({
             player={player}
             dimensions={dimensions}
             currentTime={currentTime}
+            mapConfig={mapConfig}
           />
         ))}
 
-      {/* Event markers (topmost, needs pointer-events for tooltips) */}
       {layers.events && (
         <g className="pointer-events-auto">
           <EventOverlay
@@ -72,6 +72,7 @@ const PlayerOverlay = ({
             dimensions={dimensions}
             currentTime={currentTime}
             hiddenPlayerIds={hiddenPlayerIds}
+            mapConfig={mapConfig}
           />
         </g>
       )}

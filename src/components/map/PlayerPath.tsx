@@ -1,20 +1,21 @@
 import { useMemo, memo } from "react";
-import type { Dimensions, PlayerWithColor } from "@/types/map";
+import type { Dimensions, PlayerWithColor, MapConfig } from "@/types/map";
 import { worldToPixel, sortByTimestamp, buildPathD, pathUpToTime } from "@/lib/visualization";
 
 interface PlayerPathProps {
   player: PlayerWithColor;
   dimensions: Dimensions;
   currentTime: number;
+  mapConfig: MapConfig;
 }
 
 /** Renders a single player's path progressively up to currentTime. */
-const PlayerPath = memo(({ player, dimensions, currentTime }: PlayerPathProps) => {
+const PlayerPath = memo(({ player, dimensions, currentTime, mapConfig }: PlayerPathProps) => {
   const { coords, pathD } = useMemo(() => {
     const visible = pathUpToTime(player.path, currentTime);
-    const c = visible.map((pt) => worldToPixel(pt.x, pt.y, dimensions));
+    const c = visible.map((pt) => worldToPixel(pt.x, pt.z, mapConfig, dimensions));
     return { coords: c, pathD: buildPathD(c) };
-  }, [player.path, dimensions, currentTime]);
+  }, [player.path, dimensions, currentTime, mapConfig]);
 
   if (coords.length === 0) return null;
 
@@ -26,7 +27,6 @@ const PlayerPath = memo(({ player, dimensions, currentTime }: PlayerPathProps) =
 
   return (
     <g>
-      {/* Glow / shadow pass for depth */}
       <path
         d={pathD}
         fill="none"
@@ -36,7 +36,6 @@ const PlayerPath = memo(({ player, dimensions, currentTime }: PlayerPathProps) =
         strokeLinejoin="round"
         opacity={0.2}
       />
-      {/* Main path line */}
       <path
         d={pathD}
         fill="none"
@@ -48,7 +47,6 @@ const PlayerPath = memo(({ player, dimensions, currentTime }: PlayerPathProps) =
         opacity={0.9}
       />
 
-      {/* Start marker — filled circle with dark outline */}
       <circle cx={start.x} cy={start.y} r={6} fill="hsl(0, 0%, 0%)" opacity={0.3} />
       <circle
         cx={start.x}
@@ -59,7 +57,6 @@ const PlayerPath = memo(({ player, dimensions, currentTime }: PlayerPathProps) =
         strokeWidth={2}
       />
 
-      {/* End marker — ring (only when path is complete) */}
       {isComplete && (
         <>
           <circle cx={end.x} cy={end.y} r={6} fill="hsl(0, 0%, 0%)" opacity={0.25} />
