@@ -28,8 +28,13 @@ const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds, m
   const handleMouseEnter = useCallback((i: number) => setHoveredIndex(i), []);
   const handleMouseLeave = useCallback(() => setHoveredIndex(null), []);
 
+  // Compute hovered event position once for the tooltip layer
+  const hoveredEvt = hoveredIndex !== null ? visibleEvents[hoveredIndex] : null;
+  const hoveredPos = hoveredEvt ? worldToPixel(hoveredEvt.x, hoveredEvt.z, mapConfig, dimensions) : null;
+
   return (
     <>
+      {/* Layer 1: All markers (hit areas + shapes) */}
       {visibleEvents.map((evt, i) => {
         const pos = worldToPixel(evt.x, evt.z, mapConfig, dimensions);
         const isHovered = hoveredIndex === i;
@@ -40,19 +45,21 @@ const EventOverlay = memo(({ events, dimensions, currentTime, hiddenPlayerIds, m
             onMouseLeave={handleMouseLeave}
             style={{ cursor: "pointer" }}
           >
-            <circle cx={pos.x} cy={pos.y} r={10} fill="transparent" />
+            <circle cx={pos.x} cy={pos.y} r={12} fill="transparent" />
             <EventShape type={evt.type} x={pos.x} y={pos.y} hovered={isHovered} />
-            {isHovered && (
-              <EventTooltip
-                label={`${EVENT_LABELS[evt.type]} • t=${evt.t}s`}
-                x={pos.x}
-                y={pos.y}
-                svgWidth={dimensions.width}
-              />
-            )}
           </g>
         );
       })}
+
+      {/* Layer 2: Tooltip rendered LAST so it's always on top */}
+      {hoveredEvt && hoveredPos && (
+        <EventTooltip
+          label={`${EVENT_LABELS[hoveredEvt.type]} • t=${hoveredEvt.t}s`}
+          x={hoveredPos.x}
+          y={hoveredPos.y}
+          svgWidth={dimensions.width}
+        />
+      )}
     </>
   );
 });
@@ -119,7 +126,7 @@ function EventTooltip({ label, x, y, svgWidth }: { label: string; x: number; y: 
   const ty = y - 16;
 
   return (
-    <g>
+    <g style={{ pointerEvents: "none" }}>
       <rect x={tx + 1} y={ty + 1} width={textWidth} height={24} rx={5} fill="hsl(0, 0%, 0%)" opacity={0.35} />
       <rect
         x={tx}
