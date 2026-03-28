@@ -8,10 +8,10 @@ interface TopBarProps {
 }
 
 const TopBar = ({ onDataLoaded, onError }: TopBarProps) => (
-  <header className="h-14 flex items-center justify-between px-6 bg-topbar border-b border-border shrink-0">
-    <div className="flex items-center gap-3">
-      <MapPin className="w-5 h-5 text-primary" />
-      <h1 className="text-lg font-semibold tracking-wide text-foreground">
+  <header className="h-12 flex items-center justify-between px-5 bg-topbar border-b border-border/70 shrink-0">
+    <div className="flex items-center gap-2.5">
+      <MapPin className="w-4.5 h-4.5 text-primary" />
+      <h1 className="text-sm font-semibold tracking-wide text-foreground">
         Player Journey Tool
       </h1>
     </div>

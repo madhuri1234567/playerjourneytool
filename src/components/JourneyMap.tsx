@@ -17,22 +17,18 @@ interface JourneyMapProps {
 const JourneyMap = ({ players, events }: JourneyMapProps) => {
   const { containerRef, dimensions, measure } = useImageDimensions();
 
-  // Player colors
   const playersWithColors: PlayerWithColor[] = useMemo(
     () => players.map((p, i) => ({ ...p, color: getPlayerColor(i) })),
     [players]
   );
 
-  // Time range
   const { min: minTime, max: maxTime } = useMemo(
     () => getTimeRange(players.map((p) => p.path), events),
     [players, events]
   );
 
-  // Timeline
   const timeline = useTimeline({ minTime, maxTime });
 
-  // Player visibility
   const [hiddenPlayerIds, setHiddenPlayerIds] = useState<Set<string>>(new Set());
   const togglePlayer = useCallback((id: string) => {
     setHiddenPlayerIds((prev) => {
@@ -43,7 +39,6 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
     });
   }, []);
 
-  // Layers
   const [layers, setLayers] = useState<LayerVisibility>({
     paths: true,
     events: true,
@@ -57,10 +52,10 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background">
-      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-3 overflow-hidden">
         <div
           ref={containerRef}
-          className="relative inline-block rounded-lg overflow-hidden shadow-2xl border border-border"
+          className="relative inline-block rounded-lg overflow-hidden shadow-2xl border border-border/60"
         >
           <img
             src={minimapSrc}
@@ -68,7 +63,7 @@ const JourneyMap = ({ players, events }: JourneyMapProps) => {
             width={1024}
             height={1024}
             onLoad={measure}
-            className="block max-h-[calc(100vh-10rem)] w-auto h-auto"
+            className="block max-h-[calc(100vh-9rem)] w-auto h-auto"
             draggable={false}
           />
           {dimensions.width > 0 && (
