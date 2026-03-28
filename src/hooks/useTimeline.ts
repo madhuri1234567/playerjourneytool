@@ -8,7 +8,7 @@ interface UseTimelineOptions {
 }
 
 export function useTimeline({ minTime, maxTime }: UseTimelineOptions) {
-  const [currentTime, setCurrentTime] = useState(maxTime);
+  const [currentTime, setCurrentTime] = useState(minTime);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
   const rafRef = useRef<number>(0);
@@ -33,7 +33,7 @@ export function useTimeline({ minTime, maxTime }: UseTimelineOptions) {
 
   // Reset to start when data range changes
   useEffect(() => {
-    setCurrentTime(maxTime);
+    setCurrentTime(minTime);
     setIsPlaying(false);
   }, [minTime, maxTime]);
 
