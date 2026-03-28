@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import type { Dimensions, HeatmapType, PathPoint, GameEvent } from "@/types/map";
 import { buildHeatmap, heatColor, HEAT_GRID_SIZE } from "@/lib/visualization";
 
@@ -9,8 +9,8 @@ interface HeatmapOverlayProps {
   dimensions: Dimensions;
 }
 
-/** Canvas-free SVG heatmap rendered as semi-transparent grid cells. */
-const HeatmapOverlay = ({ type, paths, events, dimensions }: HeatmapOverlayProps) => {
+/** SVG heatmap rendered as semi-transparent grid cells with balanced opacity. */
+const HeatmapOverlay = memo(({ type, paths, events, dimensions }: HeatmapOverlayProps) => {
   const cells = useMemo(
     () => buildHeatmap(type, paths, events),
     [type, paths, events]
@@ -22,7 +22,7 @@ const HeatmapOverlay = ({ type, paths, events, dimensions }: HeatmapOverlayProps
   if (cells.length === 0) return null;
 
   return (
-    <g opacity={0.45}>
+    <g>
       {cells.map((cell) => (
         <rect
           key={`${cell.row}-${cell.col}`}
@@ -31,11 +31,14 @@ const HeatmapOverlay = ({ type, paths, events, dimensions }: HeatmapOverlayProps
           width={cellW}
           height={cellH}
           fill={heatColor(cell.intensity)}
-          rx={1}
+          opacity={0.15 + cell.intensity * 0.4}
+          rx={2}
         />
       ))}
     </g>
   );
-};
+});
+
+HeatmapOverlay.displayName = "HeatmapOverlay";
 
 export default HeatmapOverlay;
