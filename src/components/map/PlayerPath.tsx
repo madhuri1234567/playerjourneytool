@@ -1,28 +1,32 @@
 import { useMemo } from "react";
-import type { PixelCoord, Dimensions, PlayerWithColor } from "@/types/map";
-import { worldToPixel, sortByTimestamp, buildPathD } from "@/lib/visualization";
+import type { Dimensions, PlayerWithColor } from "@/types/map";
+import { worldToPixel, sortByTimestamp, buildPathD, pathUpToTime } from "@/lib/visualization";
 
 interface PlayerPathProps {
   player: PlayerWithColor;
   dimensions: Dimensions;
+  currentTime: number;
 }
 
-/** Renders a single player's path as an SVG line with start/end markers. */
-const PlayerPath = ({ player, dimensions }: PlayerPathProps) => {
+/** Renders a single player's path progressively up to currentTime. */
+const PlayerPath = ({ player, dimensions, currentTime }: PlayerPathProps) => {
   const { coords, pathD } = useMemo(() => {
-    const sorted = sortByTimestamp(player.path);
-    const c = sorted.map((pt) => worldToPixel(pt.x, pt.y, dimensions));
+    const visible = pathUpToTime(player.path, currentTime);
+    const c = visible.map((pt) => worldToPixel(pt.x, pt.y, dimensions));
     return { coords: c, pathD: buildPathD(c) };
-  }, [player.path, dimensions]);
+  }, [player.path, dimensions, currentTime]);
 
   if (coords.length === 0) return null;
 
   const start = coords[0];
   const end = coords[coords.length - 1];
 
+  // Check if full path is rendered
+  const sorted = sortByTimestamp(player.path);
+  const isComplete = sorted.length > 0 && currentTime >= sorted[sorted.length - 1].t;
+
   return (
     <g>
-      {/* Path line */}
       <path
         d={pathD}
         fill="none"
@@ -44,21 +48,20 @@ const PlayerPath = ({ player, dimensions }: PlayerPathProps) => {
         strokeWidth={2}
       />
 
-      {/* End marker — ring */}
-      <circle
-        cx={end.x}
-        cy={end.y}
-        r={5}
-        fill="none"
-        stroke={player.color}
-        strokeWidth={2.5}
-      />
-      <circle
-        cx={end.x}
-        cy={end.y}
-        r={2}
-        fill={player.color}
-      />
+      {/* End marker — ring (only when path is complete) */}
+      {isComplete && (
+        <>
+          <circle
+            cx={end.x}
+            cy={end.y}
+            r={5}
+            fill="none"
+            stroke={player.color}
+            strokeWidth={2.5}
+          />
+          <circle cx={end.x} cy={end.y} r={2} fill={player.color} />
+        </>
+      )}
     </g>
   );
 };
