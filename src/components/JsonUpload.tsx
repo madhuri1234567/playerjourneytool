@@ -15,6 +15,17 @@ const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
+      // Detect Parquet / binary files by extension or name pattern
+      const name = file.name.toLowerCase();
+      if (!name.endsWith(".json") && file.type !== "application/json") {
+        onError(
+          "This file is not JSON. Raw parquet / .nakama files are not supported for direct upload. " +
+          "All match data is already pre-loaded — use the Map, Date and Match filters above to browse."
+        );
+        e.target.value = "";
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         try {
