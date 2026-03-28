@@ -1,11 +1,11 @@
 /** Core types for the player journey visualization */
 
 export interface PathPoint {
-  /** Normalized x coordinate (0–1) */
+  /** World x coordinate (raw, not normalized) */
   x: number;
-  /** Normalized y coordinate (0–1) */
-  y: number;
-  /** Timestamp — used to order the path */
+  /** World z coordinate (raw, not normalized) */
+  z: number;
+  /** Timestamp — used to order the path (0-based seconds) */
   t: number;
 }
 
@@ -20,7 +20,7 @@ export type GameEventType = "kill" | "death" | "loot" | "storm_death";
 export interface GameEvent {
   type: GameEventType;
   x: number;
-  y: number;
+  z: number;
   t: number;
   player_id: string;
 }
@@ -57,3 +57,20 @@ export interface LayerVisibility {
 
 /** Heatmap type */
 export type HeatmapType = "movement" | "kills" | "deaths";
+
+/** Map-specific coordinate config */
+export interface MapConfig {
+  scale: number;
+  originX: number;
+  originZ: number;
+}
+
+/** Match index entry */
+export interface MatchIndexEntry {
+  match_id: string;
+  map: string;
+  player_count: number;
+  bot_count: number;
+  duration: number;
+  file: string;
+}

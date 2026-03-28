@@ -1,17 +1,21 @@
-import type { PathPoint, PixelCoord, Dimensions, GameEvent, HeatmapType } from "@/types/map";
+import type { PathPoint, PixelCoord, Dimensions, GameEvent, HeatmapType, MapConfig } from "@/types/map";
 
 /**
- * Convert normalized world coordinates (0–1) to pixel coordinates
- * relative to the rendered image dimensions.
+ * Convert raw world coordinates (x, z) to pixel coordinates
+ * using map-specific scale/origin, then scaling to image dimensions.
+ * Y-axis is inverted (world Z+ is up, pixel Y+ is down).
  */
 export function worldToPixel(
-  normalizedX: number,
-  normalizedY: number,
+  worldX: number,
+  worldZ: number,
+  mapConfig: MapConfig,
   dimensions: Dimensions
 ): PixelCoord {
+  const nx = (worldX - mapConfig.originX) / mapConfig.scale;
+  const nz = 1 - (worldZ - mapConfig.originZ) / mapConfig.scale;
   return {
-    x: normalizedX * dimensions.width,
-    y: normalizedY * dimensions.height,
+    x: nx * dimensions.width,
+    y: nz * dimensions.height,
   };
 }
 
@@ -78,29 +82,41 @@ export function pathUpToTime(path: PathPoint[], time: number): PathPoint[] {
 
 /** ── Heatmap helpers ── */
 
-const GRID_SIZE = 32; // number of cells per axis
+const GRID_SIZE = 32;
 
 export interface HeatCell {
   row: number;
   col: number;
-  value: number;       // raw count
-  intensity: number;   // 0–1 normalized
+  value: number;
+  intensity: number;
 }
 
+/**
+ * Build heatmap from world-coordinate data.
+ * Uses map config to normalize positions to 0-1 grid.
+ */
 export function buildHeatmap(
   type: HeatmapType,
   paths: PathPoint[][],
-  events: GameEvent[]
+  events: GameEvent[],
+  mapConfig: MapConfig
 ): HeatCell[] {
   const grid: number[][] = Array.from({ length: GRID_SIZE }, () =>
     new Array(GRID_SIZE).fill(0)
   );
 
+  const toGrid = (wx: number, wz: number) => {
+    const nx = (wx - mapConfig.originX) / mapConfig.scale;
+    const nz = (wz - mapConfig.originZ) / mapConfig.scale;
+    const col = Math.min(Math.max(Math.floor(nx * GRID_SIZE), 0), GRID_SIZE - 1);
+    const row = Math.min(Math.max(Math.floor((1 - nz) * GRID_SIZE), 0), GRID_SIZE - 1);
+    return { row, col };
+  };
+
   if (type === "movement") {
     for (const path of paths) {
       for (const pt of path) {
-        const col = Math.min(Math.floor(pt.x * GRID_SIZE), GRID_SIZE - 1);
-        const row = Math.min(Math.floor(pt.y * GRID_SIZE), GRID_SIZE - 1);
+        const { row, col } = toGrid(pt.x, pt.z);
         grid[row][col]++;
       }
     }
@@ -108,8 +124,7 @@ export function buildHeatmap(
     const filterType = type === "kills" ? "kill" : "death";
     for (const evt of events) {
       if (evt.type === filterType || (type === "deaths" && evt.type === "storm_death")) {
-        const col = Math.min(Math.floor(evt.x * GRID_SIZE), GRID_SIZE - 1);
-        const row = Math.min(Math.floor(evt.y * GRID_SIZE), GRID_SIZE - 1);
+        const { row, col } = toGrid(evt.x, evt.z);
         grid[row][col]++;
       }
     }
@@ -140,7 +155,6 @@ export function buildHeatmap(
 
 /** Map intensity 0–1 to a blue→red HSL color string. */
 export function heatColor(intensity: number): string {
-  // 240 (blue) → 0 (red)
   const hue = 240 - intensity * 240;
   return `hsl(${hue}, 85%, 50%)`;
 }
