@@ -8,6 +8,24 @@ interface JsonUploadProps {
   onError: (message: string) => void;
 }
 
+const PARQUET_MAGIC = [0x50, 0x41, 0x52, 0x31] as const; // "PAR1"
+
+const isParquetBinary = (buffer: ArrayBuffer): boolean => {
+  if (buffer.byteLength < 4) return false;
+  const bytes = new Uint8Array(buffer, 0, 4);
+  return PARQUET_MAGIC.every((magic, idx) => bytes[idx] === magic);
+};
+
+const extractMatchShortId = (fileName: string): string | null => {
+  const underscoreMatch = fileName.match(/_([0-9a-f]{8})-[0-9a-f-]+\.(?:nakama-0|parquet)$/i);
+  if (underscoreMatch) return underscoreMatch[1];
+
+  const directMatch = fileName.match(/^([0-9a-f]{8})-[0-9a-f-]+\.(?:nakama-0|parquet)$/i);
+  if (directMatch) return directMatch[1];
+
+  return null;
+};
+
 /** File upload button for loading player JSON data. */
 const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
   const handleFile = useCallback(
@@ -15,31 +33,47 @@ const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Detect Parquet / binary files by extension or name pattern
-      const name = file.name.toLowerCase();
-      if (!name.endsWith(".json") && file.type !== "application/json") {
-        onError(
-          "This file is not JSON. Raw parquet / .nakama files are not supported for direct upload. " +
-          "All match data is already pre-loaded — use the Map, Date and Match filters above to browse."
-        );
-        e.target.value = "";
-        return;
-      }
+      const processFile = async () => {
+        const lowerName = file.name.toLowerCase();
+        const buffer = await file.arrayBuffer();
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const data = parsePlayerJson(reader.result as string);
+        const looksLikeParquet =
+          isParquetBinary(buffer) || lowerName.endsWith(".parquet") || lowerName.endsWith(".nakama-0");
+
+        if (looksLikeParquet) {
+          const shortId = extractMatchShortId(lowerName);
+          if (!shortId) {
+            throw new Error(
+              "Parquet file detected, but I couldn't extract the match ID from its filename."
+            );
+          }
+
+          const res = await fetch(`/data/matches/${shortId}.json`);
+          if (!res.ok) {
+            throw new Error(
+              `Could not locate converted match data for ${shortId}. Please use a file from the provided dataset bundle.`
+            );
+          }
+
+          const convertedJson = await res.text();
+          const data = parsePlayerJson(convertedJson);
           onDataLoaded(data);
-        } catch (err) {
-          onError(err instanceof Error ? err.message : "Invalid JSON file.");
+          return;
         }
-      };
-      reader.onerror = () => onError("Failed to read file.");
-      reader.readAsText(file);
 
-      // Reset input so the same file can be re-selected
-      e.target.value = "";
+        const text = new TextDecoder().decode(buffer);
+        const data = parsePlayerJson(text);
+        onDataLoaded(data);
+      };
+
+      processFile()
+        .catch((err) => {
+          onError(err instanceof Error ? err.message : "Failed to parse uploaded file.");
+        })
+        .finally(() => {
+          // Reset input so the same file can be re-selected
+          e.target.value = "";
+        });
     },
     [onDataLoaded, onError]
   );
@@ -59,3 +93,4 @@ const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
 };
 
 export default JsonUpload;
+
