@@ -39,7 +39,7 @@ const JsonUpload = ({ onDataLoaded, onError }: JsonUploadProps) => {
       Load JSON
       <input
         type="file"
-        accept=".json,application/json"
+        accept=".json,.parquet,.csv,.txt,application/json,application/octet-stream"
         onChange={handleFile}
         className="sr-only"
       />
