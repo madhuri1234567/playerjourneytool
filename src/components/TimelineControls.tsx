@@ -58,7 +58,7 @@ const TimelineControls = ({
       <div className="flex-1 relative h-9 flex items-center group">
         <div className="absolute inset-x-0 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div
-            className="h-full rounded-full bg-primary/80 transition-[width] duration-75"
+            className="h-full rounded-full bg-primary/80"
             style={{ width: `${progress}%` }}
           />
         </div>
